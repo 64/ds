@@ -26,9 +26,6 @@ MU_TEST(set) {
 	for (int i = 0; i < TEST_BITS; i++) {
 		bitmap_set(data, i);
 		mu_assert_int_neq(bitmap_test(data, i), 0);
-		// Shouldn't change the value
-		bitmap_set(data, i);
-		mu_assert_int_neq(bitmap_test(data, i), 0);
 	}
 }
 
@@ -38,9 +35,29 @@ MU_TEST(clear) {
 	for (int i = 0; i < TEST_BITS; i++) {
 		bitmap_clear(data, i);
 		mu_assert_int_eq(bitmap_test(data, i), 0);
-		// Shouldn't change the value
-		bitmap_clear(data, i);
-		mu_assert_int_eq(bitmap_test(data, i), 0);
+	}
+}
+
+MU_TEST(toggle) {
+	unsigned char *data = malloc(TEST_BYTES);
+	memset(data, 0xAA, TEST_BYTES);
+	for (int i = 0; i < TEST_BITS; i++) {
+		bool before = bitmap_test(data, i);
+		bitmap_toggle(data, i);
+		bool after = bitmap_test(data, i);
+		mu_assert_int_neq(before, after);
+	}
+}
+
+MU_TEST(bwrite) {
+	unsigned char *data = malloc(TEST_BYTES);
+	memset(data, 0xFF, TEST_BYTES);
+	for (int i = 0; i < TEST_BITS; i++) {
+		bitmap_write(data, i, i % 2);
+		if (i % 2)
+			mu_assert_int_neq(bitmap_test(data, i), 0);
+		else
+			mu_assert_int_eq(bitmap_test(data, i), 0);
 	}
 }
 
@@ -48,6 +65,8 @@ MU_TEST_SUITE(bitmap) {
 	MU_RUN_TEST(test);
 	MU_RUN_TEST(set);
 	MU_RUN_TEST(clear);
+	MU_RUN_TEST(toggle);
+	MU_RUN_TEST(bwrite);
 }
 
 int main(void) {
