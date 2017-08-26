@@ -1,3 +1,1 @@
-int export_fn(void) {
-	return -5;
-}
+#include "bitmap.h"

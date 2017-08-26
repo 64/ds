@@ -26,7 +26,9 @@ build/libds.a: build/ $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
 
 build/%.o: src/%.c
-	$(CC) -c $< -o $@ $(CFLAGS)
+	$(CC) -c $< -o $@ -MD $(CFLAGS)
 
 build/%: tests/%.c
-	$(CC) $< -o $@ -Lbuild -lds $(CFLAGS)
+	$(CC) $< -o $@ -Lbuild -lds -MD $(CFLAGS)
+
+-include build/*.d
