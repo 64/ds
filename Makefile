@@ -1,14 +1,15 @@
 .PHONY: all test clean
 .SUFFIXES: .o .c .test
 
-CFLAGS += -Wall -Wextra -Wpedantic -Werror -std=gnu11 -Iinclude
+CFLAGS += -Wall -Wextra -Werror -std=gnu11 -Iinclude
 
 OBJ_LIST := \
 bitmap.o
 OBJS = $(addprefix build/,$(OBJ_LIST))
 
 TEST_EXE_LIST := \
-test_bitmap
+test_bitmap \
+test_linked
 TEST_EXES = $(addprefix build/,$(TEST_EXE_LIST))
 
 all: build/libds.a
