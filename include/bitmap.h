@@ -12,3 +12,5 @@
 
 //https://graphics.stanford.edu/~seander/bithacks.html#ConditionalSetOrClearBitsWithoutBranching
 #define bitmap_write(map, which, state) map[(which) >> 3] ^= (-(state) ^ map[(which) >> 3]) & (1 << ((which) & 7))
+
+int bitmap_find_hole(unsigned char *map, size_t size, size_t hole_size);
