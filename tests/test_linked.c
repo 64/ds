@@ -114,6 +114,17 @@ MU_TEST(append) {
 	mu_assert_int_eq((uintptr_t)&t3_d, (uintptr_t)dlist_get_next(&t2_d, list));
 }
 
+MU_TEST(dremove) {
+	struct test_dlist t1_d = { 0, { NULL, NULL } };
+	struct test_dlist t2_d = { 0, { NULL, NULL } };
+	struct test_dlist t3_d = { 0, { NULL, NULL } };
+	dlist_set_next(&t1_d, list, &t2_d);
+	dlist_set_next(&t2_d, list, &t3_d);
+	mu_assert_int_eq((uintptr_t)&t2_d, (uintptr_t)dlist_get_next(&t1_d, list));
+	dlist_remove(&t2_d, list);
+	mu_assert_int_eq((uintptr_t)&t3_d, (uintptr_t)dlist_get_next(&t1_d, list));
+}
+
 MU_TEST_SUITE(linked) {
 	MU_RUN_TEST(entry);
 	MU_RUN_TEST(get_next);
@@ -122,6 +133,7 @@ MU_TEST_SUITE(linked) {
 	MU_RUN_TEST(set_prev);
 	MU_RUN_TEST(foreach);
 	MU_RUN_TEST(append);
+	MU_RUN_TEST(dremove);
 }
 
 int main(void) {

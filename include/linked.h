@@ -71,6 +71,10 @@ struct dlist_entry {
 	struct dlist_entry *__node = &(node)->member; \
 	__dlist_append(__head, __node); })
 
+#define dlist_remove(head, member) ({ \
+	struct dlist_entry *__head = &(head)->member; \
+	__head->prev->next = __head->next; })
+
 static inline void __slist_append(struct slist_entry *head, struct slist_entry *node) {
 	struct slist_entry *prev = head;
 	while (head != NULL)
