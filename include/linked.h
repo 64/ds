@@ -60,3 +60,29 @@ struct dlist_entry {
 #define dlist_foreach(head, member, start) \
 	for (typeof(start) (head) = start; (head) != NULL; \
 		(head) = dlist_get_next((head), member))
+
+#define slist_append(head, member, node) ({ \
+	struct slist_entry *__head = &(head)->member; \
+	struct slist_entry *__node = &(node)->member; \
+	__slist_append(__head, __node); })
+
+#define dlist_append(head, member, node) ({ \
+	struct dlist_entry *__head = &(head)->member; \
+	struct dlist_entry *__node = &(node)->member; \
+	__dlist_append(__head, __node); })
+
+static inline void __slist_append(struct slist_entry *head, struct slist_entry *node) {
+	struct slist_entry *prev = head;
+	while (head != NULL)
+		prev = head, head = head->next;
+	prev->next = node;
+}
+
+static inline void __dlist_append(struct dlist_entry *head, struct dlist_entry *node) {
+	struct dlist_entry *prev = head;
+	while (head != NULL)
+		prev = head, head = head->next;
+	prev->next = node;
+	if (node != NULL)
+		node->prev = prev;
+}
