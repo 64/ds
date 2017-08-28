@@ -1,5 +1,5 @@
 #include "minunit.h"
-#include "bitmap.h"
+#include "ds/bitmap.h"
 #include <stdlib.h>
 
 #define TEST_BYTES 13

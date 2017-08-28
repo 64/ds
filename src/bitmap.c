@@ -1,4 +1,4 @@
-#include "bitmap.h"
+#include "ds/bitmap.h"
 
 // TODO: Optimize this (lookup tables, etc)
 int bitmap_find_hole(unsigned char *map, size_t size, size_t hole_size) {

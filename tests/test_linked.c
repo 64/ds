@@ -1,5 +1,5 @@
 #include "minunit.h"
-#include "linked.h"
+#include "ds/linked.h"
 #include <stdint.h>
 #include <stdlib.h>
 
