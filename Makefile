@@ -2,7 +2,7 @@
 .SUFFIXES: .o .c .test
 
 CFLAGS += -Wall -Wextra -Werror -std=gnu11 -Iinclude
-DEBUG_CFLAGS := -g -Og -fsanitize=undefined
+DEBUG_CFLAGS := -g -Og
 RELEASE_CFLAGS := -Ofast
 
 OBJ_LIST := \
@@ -20,6 +20,12 @@ ifeq ($(DEBUG),0)
     CFLAGS += $(RELEASE_CFLAGS)
 else
     CFLAGS += $(DEBUG_CFLAGS)
+endif
+
+ifeq ($(HOST),this)
+    CFLAGS += -fsanitize=address,undefined
+else
+    CFLAGS += -fsanitize=undefined
 endif
 
 all: build/libds.a
@@ -42,6 +48,6 @@ build/%.o: src/%.c
 	$(CC) -c $< -o $@ -MD $(CFLAGS)
 
 build/%: tests/%.c build/libds.a
-	$(CC) $< -o $@ -Lbuild -lds -MD $(CFLAGS) -fsanitize=address
+	$(CC) $< -o $@ -Lbuild -lds -MD $(CFLAGS)
 
 -include build/*.d

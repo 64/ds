@@ -7,7 +7,7 @@ COLOR_GREEN="\033[0;32m"
 num_failed=0
 num_successful=0
 for test in $@; do
-	./$test > temp_test_out.log
+	./$test &> temp_test_out.log
 	if [ $? -ne 0 ] ; then
 		printf "$COLOR_RED------- Test failure in $test: -------$COLOR_RESET\n"
 		cat temp_test_out.log

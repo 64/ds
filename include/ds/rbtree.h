@@ -25,8 +25,8 @@ struct rbtree {
 
 #define RB_PARENT_MASK (~1)
 #define RB_COLOR_MASK (~RB_PARENT_MASK)
-#define RB_BLACK 0
-#define RB_RED 1
+#define RB_RED 0
+#define RB_BLACK 1
 
 #define rb_mask_parent(ptr) \
 	((uintptr_t)(ptr) & RB_PARENT_MASK)
@@ -34,9 +34,9 @@ struct rbtree {
 	((uintptr_t)(ptr) & RB_COLOR_MASK)
 
 #define rb_is_red(node) \
-	(node != NULL && rb_mask_color((node)->parent_color) == RB_RED)
+	(rb_color(node) == RB_RED)
 #define rb_is_black(node) \
-	(node == NULL || rb_mask_color((node)->parent_color) == RB_BLACK)
+	(rb_color(node) == RB_BLACK)
 
 static inline struct rb_node *rb_parent(struct rb_node *node)
 {
@@ -45,7 +45,7 @@ static inline struct rb_node *rb_parent(struct rb_node *node)
 
 static inline unsigned int rb_color(struct rb_node *node)
 {
-	return rb_mask_color(node->parent_color);	
+	return node ? rb_mask_color(node->parent_color) : RB_BLACK;
 }
 
 static inline struct rb_node *rb_grandparent(struct rb_node *node)
@@ -90,4 +90,15 @@ static inline void rb_set_parent(struct rb_node *node, struct rb_node *parent)
 	node->parent_color = (uintptr_t)parent | color;
 }
 
-void rb_insert_color(struct rb_node *node);
+static inline void rb_link_node(struct rb_node *node, struct rb_node *parent,
+			struct rb_node **link)
+{
+	rb_set_parent(node, parent);
+	rb_set_color(node, RB_RED);
+
+	node->left = node->right = NULL;
+	*link = node;
+}
+
+void rb_insert_color(struct rbtree *tree, struct rb_node *node);
+void rb_erase(struct rbtree *tree, struct rb_node *node);
