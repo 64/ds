@@ -31,6 +31,12 @@ static unsigned int __assert_is_balanced(struct rb_node *node, jmp_buf env)
 	else if (left_count < right_count)
 		longjmp(env, 4);
 
+	// Check for corrupt parent pointers
+	if (node->left && rb_parent(node->left) != node)
+		longjmp(env, 5);
+	if (node->right && rb_parent(node->right) != node)
+		longjmp(env, 5);
+
 	// Otherwise, they are equal
 	return left_count;
 }
@@ -55,9 +61,10 @@ static void __debug_tree(struct rb_node *node)
 	__debug_tree(node->right);
 }
 
-static void debug_tree(struct rbtree *tree)
+static void __attribute__((unused)) debug_tree(struct rbtree *tree)
 {
 	__debug_tree(tree->root);
+	fprintf(stderr, "---\n");
 }
 
 static void test_tree_insert(struct rbtree *tree, struct test_node *new_node)
@@ -75,8 +82,7 @@ static void test_tree_insert(struct rbtree *tree, struct test_node *new_node)
 	}
 
 	rb_link_node(&new_node->node, parent, link);
-	rb_insert_color(tree, &new_node->node);
-	debug_tree(tree);
+	rb_insert(tree, &new_node->node);
 }
 
 MU_TEST(entry)
@@ -110,12 +116,32 @@ MU_TEST(rblink)
 	mu_assert_int_eq(0, (uintptr_t)b.node.right);
 }
 
+MU_TEST(replace)
+{
+	struct rbtree tree = { 0 };
+	struct test_node a = { .key = 'a' }, b = { .key = 'b' }, c = { .key = 'c' };
+
+	tree.root = &a.node;
+	a.node.right = &b.node;
+	rb_set_parent(&b.node, &a.node);
+	rb_set_color(&a.node, 1);
+
+	rb_replace(&tree, &a.node, &c.node);
+	struct test_node *t = rb_entry(tree.root, struct test_node, node);
+	mu_assert_int_eq((uintptr_t)t, (uintptr_t)&c);
+	mu_assert_int_eq(t->key, 'c');
+	mu_assert_int_eq((uintptr_t)c.node.left, 0);
+	mu_assert_int_eq((uintptr_t)c.node.right, (uintptr_t)&b.node);
+	mu_assert_int_eq(rb_color(&c.node), rb_color(&a.node));
+}
+
 MU_TEST(insert_and_erase)
 {
 	struct rbtree tree = { 0 };
 	struct test_node *nodes[TREE_SIZE];
 
 	fprintf(stderr, "Insert test:\n---\n");
+	srand(time(NULL));
 
 	jmp_buf env;
 	int rv = setjmp(env);
@@ -129,6 +155,9 @@ MU_TEST(insert_and_erase)
 			break;
 		case 4:
 			mu_fail("Unbalanced tree - more black nodes on the right side of a node");
+			break;
+		case 5:
+			mu_fail("Unbalanced tree - corrupt parent pointers");
 			break;
 		default:
 			mu_fail("Unbalanced tree - (unknown error)");
@@ -144,10 +173,14 @@ MU_TEST(insert_and_erase)
 	}
 
 	for (size_t i = 0; i < TREE_SIZE; i++) {
-		//rb_erase(&tree, &nodes[i]->node);
-		//assert_is_balanced(&tree, env);
-		free(nodes[i]);
+		assert_is_balanced(&tree, env);
+		rb_erase(&tree, &nodes[i]->node);
 	}
+
+	for (size_t i = 0; i < TREE_SIZE; i++)
+		free(nodes[i]);
+
+	mu_check(tree.root == NULL);
 }
 
 MU_TEST_SUITE(rbtree)
@@ -155,6 +188,7 @@ MU_TEST_SUITE(rbtree)
 	MU_RUN_TEST(entry);
 	MU_RUN_TEST(parent);
 	MU_RUN_TEST(rblink);
+	MU_RUN_TEST(replace);
 	MU_RUN_TEST(insert_and_erase);
 }
 

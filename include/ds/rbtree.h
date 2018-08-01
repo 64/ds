@@ -38,6 +38,9 @@ struct rbtree {
 #define rb_is_black(node) \
 	(rb_color(node) == RB_BLACK)
 
+#define rb_is_leaf(node) \
+	((node) == NULL || ((node)->left == NULL && (node)->right == NULL))
+
 static inline struct rb_node *rb_parent(struct rb_node *node)
 {
 	return (struct rb_node *)rb_mask_parent(node->parent_color);
@@ -100,5 +103,6 @@ static inline void rb_link_node(struct rb_node *node, struct rb_node *parent,
 	*link = node;
 }
 
-void rb_insert_color(struct rbtree *tree, struct rb_node *node);
+void rb_insert(struct rbtree *tree, struct rb_node *node);
 void rb_erase(struct rbtree *tree, struct rb_node *node);
+void rb_replace(struct rbtree *tree, struct rb_node *victim, struct rb_node *target);
