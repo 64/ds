@@ -1,7 +1,3 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
 #include "ds/rbtree.h"
 
@@ -271,6 +267,7 @@ static inline void erase_rebalance(struct rbtree *tree, struct rb_node *node, st
 	}
 }
 
+#if 0
 static void __debug_tree(struct rb_node *node)
 {
 	if (node == NULL)
@@ -287,6 +284,7 @@ static void debug_tree(struct rbtree *tree)
 	__debug_tree(tree->root);
 	fprintf(stderr, "---\n");
 }
+#endif
 
 void rb_erase(struct rbtree *tree, struct rb_node *node)
 {
@@ -352,6 +350,4 @@ void rb_erase(struct rbtree *tree, struct rb_node *node)
 	node->left = NULL;
 	node->right = NULL;
 	rb_set_parent(node, NULL);	
-
-	debug_tree(tree);
 }
