@@ -4,13 +4,14 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-#define TREE_SIZE 100
+#define TREE_SIZE 1000
 
 struct test_node {
 	struct rb_node node;
 	int key;
 };
 
+// It's not safe to go alone, take this! https://www.reddit.com/r/Eyebleach/
 static unsigned int __assert_is_balanced(struct rb_node *node, jmp_buf env)
 {
 	if (node == NULL)
@@ -37,17 +38,27 @@ static unsigned int __assert_is_balanced(struct rb_node *node, jmp_buf env)
 	if (node->right && rb_parent(node->right) != node)
 		longjmp(env, 5);
 
+	struct test_node *self, *left, *right;
+	self = rb_entry_safe(node, struct test_node, node);
+	left = rb_entry_safe(node->left, struct test_node, node);
+	right = rb_entry_safe(node->right, struct test_node, node);
+	if (left && left->key > self->key)
+		longjmp(env, 6);
+	if (right && right->key < self->key)
+		longjmp(env, 6);
+
 	// Otherwise, they are equal
 	return left_count;
 }
 
-// It's not safe to go alone, take this! https://www.reddit.com/r/Eyebleach/
 #define assert_is_balanced(tree, env) \
 	do { \
 		mu_check((tree)->root != NULL); \
 		mu_check(rb_is_black((tree)->root)); \
+		mu_check(rb_first_uncached((tree)) == rb_first_cached((tree))); \
+		mu_assert_int_eq((uintptr_t)rb_first_uncached((tree))->left, 0); \
+		mu_assert_int_eq((uintptr_t)rb_first_cached((tree))->left, 0); \
 		__assert_is_balanced((tree)->root, env); \
-		fprintf(stderr, "---\n"); \
 	} while (0)
 
 static void __debug_tree(struct rb_node *node)
@@ -55,8 +66,8 @@ static void __debug_tree(struct rb_node *node)
 	if (node == NULL)
 		return;
 	
-	fprintf(stderr, "%p: %s - (parent %p, left %p, right %p)\n", node, rb_is_red(node) ? "RED  " : "BLACK",
-			rb_parent(node), node->left, node->right);
+	fprintf(stderr, "%-18p: %s - (parent %-18p, left %-18p, right %-18p): %10d\n", node, rb_is_red(node) ? "RED  " : "BLACK",
+			rb_parent(node), node->left, node->right, rb_entry(node, struct test_node, node)->key);
 	__debug_tree(node->left);
 	__debug_tree(node->right);
 }
@@ -75,14 +86,16 @@ static void test_tree_insert(struct rbtree *tree, struct test_node *new_node)
 		struct test_node *this = rb_entry(*link, struct test_node, node);
 		parent = *link;
 
-		if (this->key < new_node->key)
+		if (new_node->key < this->key)
 			link = &(*link)->left;
 		else
 			link = &(*link)->right;
 	}
 
+	struct test_node *first = rb_entry_safe(rb_first_uncached(tree), struct test_node, node);
+
 	rb_link_node(&new_node->node, parent, link);
-	rb_insert(tree, &new_node->node);
+	rb_insert(tree, &new_node->node, first == NULL || new_node->key < first->key);
 }
 
 MU_TEST(entry)
@@ -159,6 +172,9 @@ MU_TEST(insert_and_erase)
 		case 5:
 			mu_fail("Unbalanced tree - corrupt parent pointers");
 			break;
+		case 6:
+			mu_fail("Unbalanced tree - invalid key ordering");
+			break;
 		default:
 			mu_fail("Unbalanced tree - (unknown error)");
 			break;
@@ -170,6 +186,15 @@ MU_TEST(insert_and_erase)
 		n->key = rand();
 		test_tree_insert(&tree, n);
 		assert_is_balanced(&tree, env);
+	}
+
+	// Test whether rb_next works
+	struct rb_node *n = rb_first_uncached(&tree);
+	while (rb_next(n) != NULL) {
+		int prevkey = rb_entry(n, struct test_node, node)->key;
+		n = rb_next(n);
+		int curkey = rb_entry(n, struct test_node, node)->key;
+		mu_check(prevkey <= curkey);
 	}
 
 	for (size_t i = 0; i < TREE_SIZE; i++) {

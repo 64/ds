@@ -107,10 +107,12 @@ static inline void insert_case4(struct rbtree *tree, struct rb_node *node)
 	rb_set_color(grandparent, RB_RED);
 }
 
-void rb_insert(struct rbtree *tree, struct rb_node *node)
+void rb_insert(struct rbtree *tree, struct rb_node *node, bool most_left)
 {
 	if (node == NULL)
 		return;
+
+	struct rb_node *original = node;
 
 	while (1) {
 		struct rb_node *parent = rb_parent(node);
@@ -127,6 +129,9 @@ void rb_insert(struct rbtree *tree, struct rb_node *node)
 			break;
 		}
 	}
+
+	if (most_left && original->left == NULL)
+		tree->most_left = original;
 }
 
 // Swaps two nodes in the tree
@@ -288,9 +293,11 @@ static void debug_tree(struct rbtree *tree)
 
 void rb_erase(struct rbtree *tree, struct rb_node *node)
 {
-	(void)tree;
 	if (node == NULL)
 		return;
+
+	if (node == tree->most_left)
+		tree->most_left = rb_next(node);
 
 	struct rb_node *y, *x, *xp;
 

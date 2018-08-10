@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "generic.h"
 
@@ -21,7 +22,7 @@ struct rbtree {
 
 #define rb_entry_safe(ptr, type, member) \
 	({ const struct rb_node *__ptr = (ptr); \
-	__ptr == NULL ? rb_entry(__ptr, type, member) : NULL; })
+	__ptr != NULL ? rb_entry(__ptr, type, member) : NULL; })
 
 #define RB_PARENT_MASK (~1)
 #define RB_COLOR_MASK (~RB_PARENT_MASK)
@@ -37,6 +38,8 @@ struct rbtree {
 	(rb_color(node) == RB_RED)
 #define rb_is_black(node) \
 	(rb_color(node) == RB_BLACK)
+
+#define rb_first_cached(tree) (tree)->most_left
 
 #define rb_is_leaf(node) \
 	((node) == NULL || ((node)->left == NULL && (node)->right == NULL))
@@ -103,6 +106,39 @@ static inline void rb_link_node(struct rb_node *node, struct rb_node *parent,
 	*link = node;
 }
 
-void rb_insert(struct rbtree *tree, struct rb_node *node);
+static inline struct rb_node *rb_first_uncached(struct rbtree *tree)
+{
+	struct rb_node *node = tree->root;
+
+	if (node == NULL)
+		return NULL;
+	
+	while (node->left)
+		node = node->left;
+	
+	return node;
+}
+
+static inline struct rb_node *rb_next(struct rb_node *node)
+{
+	struct rb_node *parent;
+
+	if (node == NULL)
+		return NULL;
+
+	if (node->right) {
+		node = node->right;
+		while (node->left)
+			node = node->left;
+		return node;
+	}
+
+	while ((parent = rb_parent(node)) && node == parent->right)
+		node = parent;
+
+	return parent;
+}
+
+void rb_insert(struct rbtree *tree, struct rb_node *node, bool most_left);
 void rb_erase(struct rbtree *tree, struct rb_node *node);
 void rb_replace(struct rbtree *tree, struct rb_node *victim, struct rb_node *target);
