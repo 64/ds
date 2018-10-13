@@ -39,9 +39,9 @@ static unsigned int __assert_is_balanced(struct rb_node *node, jmp_buf env)
 		longjmp(env, 5);
 
 	struct test_node *self, *left, *right;
-	self = rb_entry_safe(node, struct test_node, node);
-	left = rb_entry_safe(node->left, struct test_node, node);
-	right = rb_entry_safe(node->right, struct test_node, node);
+	self = rb_entry(node, struct test_node, node);
+	left = rb_entry(node->left, struct test_node, node);
+	right = rb_entry(node->right, struct test_node, node);
 	if (left && left->key > self->key)
 		longjmp(env, 6);
 	if (right && right->key < self->key)
@@ -92,7 +92,7 @@ static void test_tree_insert(struct rbtree *tree, struct test_node *new_node)
 			link = &(*link)->right;
 	}
 
-	struct test_node *first = rb_entry_safe(rb_first_uncached(tree), struct test_node, node);
+	struct test_node *first = rb_entry(rb_first_uncached(tree), struct test_node, node);
 
 	rb_link_node(&new_node->node, parent, link);
 	rb_insert(tree, &new_node->node, first == NULL || new_node->key < first->key);
@@ -103,11 +103,6 @@ MU_TEST(entry)
 	struct test_node t;
 	struct test_node *p = rb_entry(&t.node, struct test_node, node);
 	mu_assert_int_eq((uintptr_t)&t, (uintptr_t)p);
-
-	// Test the safe version (which properly handles NULLs)
-	rb_entry_safe(&t.node, struct test_node, node);
-	mu_assert_int_eq((uintptr_t)&t, (uintptr_t)p);
-	mu_assert_int_eq(0, (uintptr_t)rb_entry_safe(NULL, struct test_node, node));
 }
 
 MU_TEST(parent)
