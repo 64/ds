@@ -5,12 +5,12 @@
 
 struct test_slist {
 	int data;
-	struct slist_entry list;
+	struct slist_node list;
 };
 
 struct test_dlist {
 	int data;
-	struct dlist_entry list;
+	struct dlist_node list;
 };
 
 MU_TEST(entry) {
