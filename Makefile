@@ -13,7 +13,8 @@ OBJS = $(addprefix build/,$(OBJ_LIST))
 TEST_EXE_LIST := \
 test_bitmap \
 test_linked \
-test_rbtree
+test_rbtree \
+test_hash
 TEST_EXES = $(addprefix build/,$(TEST_EXE_LIST))
 
 ifeq ($(DEBUG),0)
